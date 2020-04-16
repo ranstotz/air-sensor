@@ -1,0 +1,15 @@
+# emacs, vscode, notes (temp) dirs
+*~
+.vscode
+**/tmp/**
+**/temp/**
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask stuff:
+instance/
+.webassets-cache
+**/venv/**
