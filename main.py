@@ -13,15 +13,15 @@ def event_per_second():
     counter = 0
 
     starttime=time.time()
-    while counter < 5:
+    # number at 5 for testing.
+    while counter < 60:
         
         fake_co2 = random.randint(200,600)
         fake_tvoc = random.randint(1,20)
 
-        year, month, day, hour, minute, sec = \
-            time.strftime("%Y %m %d %H %M %S").split()
-        timestamp = [year, month, day, hour, minute, sec]
-        print("tick")
+        # iso format timestamp
+        timestamp = time.strftime("%Y-%m-%dT%H:%M:%S %z")
+        second = timestamp[17:19]
         print("counter: ", counter)
         print(timestamp)
 
@@ -30,21 +30,34 @@ def event_per_second():
         )
         counter += 1
         time.sleep(1.0 - ((time.time() - starttime) % 1.0))
+
+        # return each minute, therefore if second == 59, new file
+        # this is for starting the script mid-minute
+        if second == "59":
+            return minute_of_data
         
     return minute_of_data
+
+
 
 def main(argv):
 
     s3_client = boto3.client('s3')
 
-    # get minute for which we measure from first
-    key_name = 'test/' + time.strftime("%Y%m%d%H%M") + '.json'
-    # now collect second data for that minute
-    minute_data = event_per_second()
-    json_dump = json.dumps(minute_data)
+    # Write each minute of data to file
+    while True:
+        
+        minute_data = event_per_second()
+        file_name_by_minute = minute_data[-1]['timestamp'][0:16]
+        key_name = file_name_by_minute + '.json'
+        json_dump = json.dumps(minute_data)
     
-    s3_client.put_object(Body=json_dump, Bucket='air-quality-sensor-ccs811', Key=key_name)
+        with open(key_name, 'w') as fp:
+            fp.write(json_dump)
+
+        #s3_client.put_object(Body=json_dump, Bucket='air-quality-sensor-ccs811', Key=key_name)
     
 
 if __name__ == "__main__":
     main(sys.argv)
+    
